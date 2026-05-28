@@ -25,7 +25,7 @@
         <label for="apiKey" class="form-label fw-bold">🔑 Gemini APIキー設定</label>
         <div class="input-group">
             <input type="password" id="apiKey" class="form-control" placeholder="AIzaSy...">
-            <button class="btn btn-outline-secondary" type="button" id="saveKeyBtn">キーを保存</button>
+            <button class="btn btn-outline-secondary" type="button" onclick="saveApiKey()">キーを保存</button>
         </div>
         <small class="text-muted mt-1">※キーはあなたのブラウザ内（LocalStorage）にのみ保存され、外部のサーバーには送信されません。</small>
     </div>
@@ -43,7 +43,7 @@
                     <label class="form-label">食事の写真を選択（スマホならカメラ起動）</label>
                     <input type="file" id="imageInput" class="form-control" accept="image/*">
                 </div>
-                <button class="btn btn-primary w-100 fw-bold py-2" type="button" id="analyzeBtn">AIでカロリーを判定する</button>
+                <button class="btn btn-primary w-100 fw-bold py-2" type="button" onclick="analyzeImage()">AIでカロリーを判定する</button>
                 <div id="loading" class="text-center my-3 d-none">🧙‍♂️ AIが画像から解析中...しばらくお待ちください...</div>
                 <div id="aiResult" class="mt-4 p-3 bg-white border rounded d-none" style="white-space: pre-wrap; font-family: inherit;"></div>
             </div>
@@ -70,7 +70,7 @@
                         <input type="text" id="logMemo" class="form-control" placeholder="例: カレー、ゆで卵">
                     </div>
                 </div>
-                <button class="btn btn-success w-100 fw-bold" type="button" id="saveDataBtn">データを記録・更新</button>
+                <button class="btn btn-success w-100 fw-bold" type="button" onclick="saveData()">データを記録・更新</button>
             </div>
 
             <div class="card p-4">
@@ -90,8 +90,14 @@
     let calorieChart = null;
 
     // 1. ページ読み込み時の初期表示設定
-    document.getElementById('logDate').valueAsDate = new Date();
-    document.getElementById('apiKey').value = localStorage.getItem('gemini_api_key') || '';
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('logDate').valueAsDate = new Date();
+        const savedKey = localStorage.getItem('gemini_api_key');
+        if (savedKey) {
+            document.getElementById('apiKey').value = savedKey;
+        }
+        updateCharts();
+    });
 
     // 2. APIキーをブラウザに保存する関数
     function saveApiKey() {
@@ -168,57 +174,4 @@
                     }]
                 };
 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (!response.ok) {
-                    const errDetail = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errDetail}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
-                    const aiText = result.candidates[0].content.parts[0].text;
-                    document.getElementById('aiResult').innerText = aiText;
-                    document.getElementById('aiResult').classList.remove('d-none');
-                } else {
-                    alert('AIからの応答フォーマットが想定と異なります。コンソールを確認してください。');
-                    console.log("API Response:", result);
-                }
-                
-            } catch (error) {
-                alert('AI判定中にエラーが発生しました。コンソールログをご確認ください。');
-                console.error("Error during analyzeImage:", error);
-            } finally {
-                // 正しい記述「finally」に完全修正
-                document.getElementById('loading').classList.add('d-none');
-            }
-        };
-        
-        reader.onerror = (error) => {
-            alert('ファイルの読み込みに失敗しました。');
-            console.error(error);
-            document.getElementById('loading').classList.add('d-none');
-        };
-        
-        reader.readAsDataURL(file);
-    }
-
-    // 6. 各種ボタンへのイベントリスナー登録
-    document.getElementById('saveKeyBtn').addEventListener('click', saveApiKey);
-    document.getElementById('saveDataBtn').addEventListener('click', saveData);
-    document.getElementById('analyzeBtn').addEventListener('click', analyzeImage);
-
-    // 7. 初回起動時に自動でグラフを描画
-    window.onload = function() {
-        updateCharts();
-    };
-</script>
-</body>
-</html>
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?
