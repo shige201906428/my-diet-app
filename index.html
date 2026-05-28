@@ -131,7 +131,7 @@
         });
     }
 
-// Gemini APIを使った画像判定ロジック（修正完全版）
+// Gemini APIを使った画像判定ロジック（エラー完全修正版）
     async function analyzeImage() {
         const key = localStorage.getItem('gemini_api_key');
         if(!key) return alert('先にGemini APIキーを設定・保存してください。');
@@ -146,50 +146,66 @@
         // 画像をBase64に変換
         const reader = new FileReader();
         reader.onloadend = async () => {
-            const base64Data = reader.result.split(',')[1];
-            
-            const prompt = "あなたは優秀な管理栄養士です。添付された食事画像から料理名、推定分量、カロリー目安、主な栄養素を識別し出力してください。また、ユーザーは2ヶ月で2kg減のダイエット中（目標1日1400-1500kcal、揚げ物NG）なので、よりヘルシーにするためのアドバイスを1言添えてください。";
-            
-            const payload = {
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType: file.type, data: base64Data } }
-                    ]
-                }]
-            };
-
             try {
-                // v1 安定版エンドポイントに修正
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                const base64Data = reader.result.split(',')[1];
+                
+                const prompt = "あなたは優秀な管理栄養士です。添付された食事画像から料理名、推定分量、カロリー目安、主な栄養素を識別し出力してください。また、ユーザーは2ヶ月で2kg減のダイエット中（目標1日1400-1500kcal、揚げ物NG）なので、よりヘルシーにするためのアドバイスを1言添えてください。";
+                
+                // ペイロード（データの形）を公式の最新仕様に完全準拠
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { 
+                                inlineData: { 
+                                    mimeType: file.type, 
+                                    data: base64Data 
+                                } 
+                            }
+                        ]
+                    }]
+                };
+
+                // 最も安定している「v1betaの最新モデル」指定のエンドポイントに修正
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
+                
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errDetail = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errDetail}`);
                 }
                 
                 const result = await response.json();
                 
-                // エラーレスポンスが返ってきた場合の安全処理を追加
-                if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts) {
+                // エラーの原因になっていた undefined (reading '0') を防ぐための安全な防御策
+                if (result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
                     const aiText = result.candidates[0].content.parts[0].text;
                     document.getElementById('aiResult').innerText = aiText;
                     document.getElementById('aiResult').classList.remove('d-none');
                 } else {
-                    alert('AIからの応答フォーマットが不正です。APIキーや画像を確認してください。');
-                    console.log(result);
+                    alert('AIからの応答フォーマットが想定と異なります。コンソールを確認してください。');
+                    console.log("API Response:", result);
                 }
                 
             } catch (error) {
-                alert('AI判定中にエラーが発生しました。URLの修正、またはキーを確認してください。');
-                console.error(error);
+                alert('AI判定中にエラーが発生しました。コンソールログをご確認ください。');
+                console.error("Error during analyzeImage:", error);
             } finally {
                 document.getElementById('loading').classList.add('d-none');
             }
         };
+        
+        reader.onerror = (error) => {
+            alert('ファイルの読み込みに失敗しました。');
+            console.error(error);
+            document.getElementById('loading').classList.add('d-none');
+        };
+        
         reader.readAsDataURL(file);
     }
 
