@@ -45,7 +45,7 @@
                 </div>
                 <button class="btn btn-primary w-100 fw-bold py-2" onclick="analyzeImage()">AIでカロリーを判定する</button>
                 <div id="loading" class="text-center my-3 d-none">🧙‍♂️ AIが画像から解析中...しばらくお待ちください...</div>
-                <div id="aiResult" class="mt-4 p-3 bg-white border rounded d-none" style="white-space: pre-wrap;"></div>
+                <div id="aiResult" class="mt-4 p-3 bg-white border rounded d-none" style="white-space: pre-wrap; font-family: inherit;"></div>
             </div>
         </div>
 
@@ -131,7 +131,7 @@
         });
     }
 
-// Gemini APIを使った画像判定ロジック（エラー完全修正版）
+    // Gemini APIを使った画像判定ロジック（最新公式仕様に完全準拠）
     async function analyzeImage() {
         const key = localStorage.getItem('gemini_api_key');
         if(!key) return alert('先にGemini APIキーを設定・保存してください。');
@@ -151,7 +151,6 @@
                 
                 const prompt = "あなたは優秀な管理栄養士です。添付された食事画像から料理名、推定分量、カロリー目安、主な栄養素を識別し出力してください。また、ユーザーは2ヶ月で2kg減のダイエット中（目標1日1400-1500kcal、揚げ物NG）なので、よりヘルシーにするためのアドバイスを1言添えてください。";
                 
-                // ペイロード（データの形）を公式の最新仕様に完全準拠
                 const payload = {
                     contents: [{
                         parts: [
@@ -166,51 +165,4 @@
                     }]
                 };
 
-                // 最も安定している「v1betaの最新モデル」指定のエンドポイントに修正
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (!response.ok) {
-                    const errDetail = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errDetail}`);
-                }
-                
-                const result = await response.json();
-                
-                // エラーの原因になっていた undefined (reading '0') を防ぐための安全な防御策
-                if (result && result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
-                    const aiText = result.candidates[0].content.parts[0].text;
-                    document.getElementById('aiResult').innerText = aiText;
-                    document.getElementById('aiResult').classList.remove('d-none');
-                } else {
-                    alert('AIからの応答フォーマットが想定と異なります。コンソールを確認してください。');
-                    console.log("API Response:", result);
-                }
-                
-            } catch (error) {
-                alert('AI判定中にエラーが発生しました。コンソールログをご確認ください。');
-                console.error("Error during analyzeImage:", error);
-            } finally {
-                document.getElementById('loading').classList.add('d-none');
-            }
-        };
-        
-        reader.onerror = (error) => {
-            alert('ファイルの読み込みに失敗しました。');
-            console.error(error);
-            document.getElementById('loading').classList.add('d-none');
-        };
-        
-        reader.readAsDataURL(file);
-    }
-
-    // 初回起動時にグラフを描画
-    window.onload = updateCharts;
-</script>
-</body>
-</html>
+                // v1beta で確実に動作する公式
