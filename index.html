@@ -3,79 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>減量管理ダッシュボード (HTML完全版)</title>
+    <title>減量管理ダッシュボード</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #f8f9fa; font-family: 'Helvetica Neue', Arial, sans-serif; }
-        .card { border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: none; margin-bottom: 20px; }
-        .nav-tabs .nav-link { border: none; color: #6c757d; }
-        .nav-tabs .nav-link.active { border-bottom: 3px solid #0d6efd; color: #0d6efd; font-weight: bold; }
+        body { background-color: #f8f9fa; font-family: sans-serif; }
+        .card { border-radius: 12px; border: none; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
-
-<div class="container py-4" style="max-width: 700px;">
+<div class="container py-4" style="max-width: 600px;">
     <div class="text-center mb-4">
-        <h1 class="fw-bold">🏃‍♂️ 減量管理ダッシュボード</h1>
-        <p class="text-muted"><strong>2ヶ月で2kg減</strong>（1日 1400〜1500kcal目安、毎日3000歩）をサーバーなしで管理</p>
+        <h2 class="fw-bold">🏃‍♂️ 減量管理ダッシュボード</h2>
+        <p class="text-muted">2ヶ月で2kg減目標</p>
     </div>
 
-    <div class="card p-3 mb-4 bg-light">
-        <label for="apiKey" class="form-label fw-bold">🔑 Gemini APIキー設定</label>
+    <div class="card p-3 bg-light">
+        <label class="form-label fw-bold">🔑 Gemini APIキー設定</label>
         <div class="input-group">
             <input type="password" id="apiKey" class="form-control" placeholder="AIzaSy...">
-            <button class="btn btn-outline-secondary" type="button" onclick="saveApiKey()">キーを保存</button>
+            <button class="btn btn-secondary" type="button" onclick="saveApiKey()">保存</button>
         </div>
-        <small class="text-muted mt-1">※キーはあなたのブラウザ内（LocalStorage）にのみ保存され、外部のサーバーには送信されません。</small>
     </div>
 
-    <ul class="nav nav-tabs justify-content-center mb-4" id="myTab" role="tablist">
-        <li class="nav-item"><button class="nav-link active" id="calc-tab" data-bs-toggle="tab" data-bs-target="#calc-content" type="button">📸 カロリー計算</button></li>
-        <li class="nav-item"><button class="nav-link" id="record-tab" data-bs-toggle="tab" data-bs-target="#record-content" type="button">📝 体重・カロリー記録</button></li>
+    <ul class="nav nav-tabs justify-content-center my-3" id="myTab" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t1" type="button">📸 カロリー計算</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t2" type="button">📝 体重記録</button></li>
     </ul>
 
-    <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="calc-content" role="tabpanel">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="t1" role="tabpanel">
             <div class="card p-4">
-                <h4 class="fw-bold mb-3">📸 パシャッとカロリー計算 AI</h4>
-                <div class="mb-3">
-                    <label class="form-label">食事の写真を選択（スマホならカメラ起動）</label>
-                    <input type="file" id="imageInput" class="form-control" accept="image/*">
-                </div>
-                <button class="btn btn-primary w-100 fw-bold py-2" type="button" onclick="analyzeImage()">AIでカロリーを判定する</button>
-                <div id="loading" class="text-center my-3 d-none">🧙‍♂️ AIが画像から解析中...しばらくお待ちください...</div>
-                <div id="aiResult" class="mt-4 p-3 bg-white border rounded d-none" style="white-space: pre-wrap; font-family: inherit;"></div>
+                <input type="file" id="imageInput" class="form-control mb-3" accept="image/*">
+                <button class="btn btn-primary w-100 fw-bold" type="button" onclick="analyzeImage()">AIでカロリー判定</button>
+                <div id="loading" class="text-center my-3 d-none">🧙‍♂️ AI解析中...</div>
+                <div id="aiResult" class="mt-3 p-3 bg-white border rounded d-none" style="white-space: pre-wrap;"></div>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="record-content" role="tabpanel">
+        <div class="tab-pane fade" id="t2" role="tabpanel">
             <div class="card p-4">
-                <h4 class="fw-bold mb-3">✍️ 今日のデータを入力する</h4>
-                <div class="row g-3 mb-3">
-                    <div class="col-6">
-                        <label class="form-label">日付</label>
-                        <input type="date" id="logDate" class="form-control">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">体重 (kg)</label>
-                        <input type="number" id="logWeight" class="form-control" step="0.1" value="65.0">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">合計カロリー (kcal)</label>
-                        <input type="number" id="logCalorie" class="form-control" step="50" value="1500">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">メモ</label>
-                        <input type="text" id="logMemo" class="form-control" placeholder="例: カレー、ゆで卵">
-                    </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><label class="form-label">日付</label><input type="date" id="logDate" class="form-control"></div>
+                    <div class="col-6"><label class="form-label">体重 (kg)</label><input type="number" id="logWeight" class="form-control" step="0.1" value="65.0"></div>
+                    <div class="col-6"><label class="form-label">カロリー (kcal)</label><input type="number" id="logCalorie" class="form-control" step="50" value="1500"></div>
+                    <div class="col-6"><label class="form-label">メモ</label><input type="text" id="logMemo" class="form-control" placeholder="ゆで卵など"></div>
                 </div>
-                <button class="btn btn-success w-100 fw-bold" type="button" onclick="saveData()">データを記録・更新</button>
+                <button class="btn btn-success w-100 fw-bold" type="button" onclick="saveData()">データを記録</button>
             </div>
-
             <div class="card p-4">
-                <h4 class="fw-bold mb-3">📈 体重＆カロリー推移</h4>
-                <canvas id="weightChart" class="mb-4"></canvas>
+                <canvas id="weightChart" class="mb-3"></canvas>
                 <canvas id="calorieChart"></canvas>
             </div>
         </div>
@@ -84,33 +61,23 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 変数の初期化
     let healthData = JSON.parse(localStorage.getItem('health_data')) || {};
-    let weightChart = null;
-    let calorieChart = null;
+    let weightChart = null, calorieChart = null;
 
-    // 1. ページ読み込み時の初期表示設定
-    window.addEventListener('DOMContentLoaded', () => {
+    window.onload = function() {
         document.getElementById('logDate').valueAsDate = new Date();
-        const savedKey = localStorage.getItem('gemini_api_key');
-        if (savedKey) {
-            document.getElementById('apiKey').value = savedKey;
-        }
+        document.getElementById('apiKey').value = localStorage.getItem('gemini_api_key') || '';
         updateCharts();
-    });
+    };
 
-    // 2. APIキーをブラウザに保存する関数
     function saveApiKey() {
-        const keyVal = document.getElementById('apiKey').value.trim();
-        localStorage.setItem('gemini_api_key', keyVal);
-        alert('APIキーをブラウザに保存しました！');
+        localStorage.setItem('gemini_api_key', document.getElementById('apiKey').value.trim());
+        alert('APIキーを保存しました！');
     }
 
-    // 3. 体重とカロリーデータを保存する関数
     function saveData() {
         const date = document.getElementById('logDate').value;
         if(!date) return alert('日付を選択してください');
-        
         healthData[date] = {
             weight: parseFloat(document.getElementById('logWeight').value),
             calories: parseInt(document.getElementById('logCalorie').value),
@@ -121,41 +88,32 @@
         updateCharts();
     }
 
-    // 4. グラフを更新する関数
     function updateCharts() {
-        const sortedDates = Object.keys(healthData).sort();
-        const weights = sortedDates.map(d => healthData[d].weight);
-        const calories = sortedDates.map(d => healthData[d].calories);
+        const dates = Object.keys(healthData).sort();
+        const weights = dates.map(d => healthData[d].weight);
+        const calories = dates.map(d => healthData[d].calories);
 
         if(weightChart) weightChart.destroy();
         if(calorieChart) calorieChart.destroy();
 
-        const ctxWeight = document.getElementById('weightChart');
-        if (ctxWeight) {
-            weightChart = new Chart(ctxWeight, {
-                type: 'line',
-                data: { labels: sortedDates, datasets: [{ label: '体重 (kg)', data: weights, borderColor: '#0d6efd', tension: 0.1 }] }
+        if(document.getElementById('weightChart')) {
+            weightChart = new Chart(document.getElementById('weightChart'), {
+                type: 'line', data: { labels: dates, datasets: [{ label: '体重 (kg)', data: weights, borderColor: '#0d6efd' }] }
             });
         }
-
-        const ctxCalorie = document.getElementById('calorieChart');
-        if (ctxCalorie) {
-            calorieChart = new Chart(ctxCalorie, {
-                type: 'bar',
-                data: { labels: sortedDates, datasets: [{ label: '摂取カロリー (kcal)', data: calories, backgroundColor: '#198754' }] }
+        if(document.getElementById('calorieChart')) {
+            calorieChart = new Chart(document.getElementById('calorieChart'), {
+                type: 'bar', data: { labels: dates, datasets: [{ label: 'カロリー (kcal)', data: calories, backgroundColor: '#198754' }] }
             });
         }
     }
 
-    // 5. Gemini APIを使った画像判定の関数
     async function analyzeImage() {
         const key = localStorage.getItem('gemini_api_key');
-        if(!key) return alert('先にGemini APIキーを設定・保存してください。');
-        
+        if(!key) return alert('先にAPIキーを保存してください。');
         const fileInput = document.getElementById('imageInput');
-        if(fileInput.files.length === 0) return alert('食事の写真を選択してください。');
-        
-        const file = fileInput.files[0];
+        if(fileInput.files.length === 0) return alert('写真を選択してください。');
+
         document.getElementById('loading').classList.remove('d-none');
         document.getElementById('aiResult').classList.add('d-none');
 
@@ -163,15 +121,28 @@
         reader.onloadend = async () => {
             try {
                 const base64Data = reader.result.split(',')[1];
-                const prompt = "あなたは優秀な管理栄養士です。添付された食事画像から料理名、推定分量、カロリー目安、主な栄養素を識別し出力してください。また、ユーザーは2ヶ月で2kg減のダイエット中（目標1日1400-1500kcal、揚げ物NG）なので、よりヘルシーにするためのアドバイスを1言添えてください。";
-                
                 const payload = {
-                    contents: [{
-                        parts: [
-                            { text: prompt },
-                            { inlineData: { mimeType: file.type, data: base64Data } }
-                        ]
-                    }]
+                    contents: [{ parts: [{ text: "優秀な管理栄養士として食事画像から料理名、分量、カロリー、栄養素を識別し出力してください。2ヶ月で2kg減のダイエット中（1日1400-1500kcal、揚げ物NG）なのでヘルシーにするアドバイスも1言添えて。" }, { inlineData: { mimeType: fileInput.files[0].type, data: base64Data } }] }]
                 };
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if(result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    document.getElementById('aiResult').innerText = result.candidates[0].content.parts[0].text;
+                    document.getElementById('aiResult').classList.remove('d-none');
+                } else {
+                    alert('お使いのAPIキーは期限切れ、または無効です。新しいキーを発行して保存し直してください。');
+                }
+            } catch (e) {
+                alert('通信エラーが発生しました。');
+                console.error(e);
+            } finally {
+                document.getElementById('loading').classList.add('d-none');
+            }
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+</script>
+</body>
+</html>
